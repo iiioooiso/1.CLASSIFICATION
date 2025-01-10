@@ -5,6 +5,7 @@ import cv2
 from mutagen import File as AudioFile  # For audio metadata
 import filetype  # Modern library to detect file type based on content
 import json
+from docx import Document
 
 def classify(input_directory, output_directory):
 
@@ -77,6 +78,18 @@ def classify_video(file_path, output_directory):
 
 def classify_text(file_path, output_directory):
     try:
+        # Handle .docx files specifically
+        if file_path.endswith('.docx'):
+            try:
+                doc = Document(file_path)  # Open the .docx file
+                _ = [p.text for p in doc.paragraphs]  # Read paragraphs to ensure it's valid
+                shutil.move(file_path, os.path.join(output_directory, 'text', os.path.basename(file_path)))
+                print(f'Moved .docx file: {os.path.basename(file_path)}')
+            except Exception as e:
+                print(f'Error processing .docx file {file_path}: {e}')
+            return  # Exit early since we've processed .docx files here
+
+        # For other text formats (.txt, .json, .csv, etc.)
         with open(file_path, 'r', encoding='utf-8') as f:
             if file_path.endswith('.json'):
                 try:
@@ -87,9 +100,7 @@ def classify_text(file_path, output_directory):
             print(f'Moved text: {os.path.basename(file_path)}')
     except Exception as e:
         print(f'Error processing text {file_path}: {e}')
-
-
-# Example usage
+        
 input_dir = './files'
 output_dir = './classified'
 classify(input_dir, output_dir)
